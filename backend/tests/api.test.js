@@ -89,6 +89,20 @@ after(async () => {
   await mongod.stop();
 });
 
+describe('CORS', () => {
+  it('allows the production frontend and configured local origin', async () => {
+    for (const origin of ['http://localhost:5173', 'https://eventwebsite-tawny.vercel.app']) {
+      const res = await request(app)
+        .options('/api/auth/login')
+        .set('Origin', origin)
+        .set('Access-Control-Request-Method', 'POST')
+        .set('Access-Control-Request-Headers', 'content-type');
+      assert.equal(res.status, 204);
+      assert.equal(res.headers['access-control-allow-origin'], origin);
+    }
+  });
+});
+
 describe('auth', () => {
   it('rejects wrong credentials and missing tokens', async () => {
     const bad = await api('post', '/api/auth/login').send({ email: 'a@college.edu', password: 'nope' });

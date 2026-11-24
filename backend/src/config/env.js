@@ -34,7 +34,14 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
-export const clientOrigins = env.CLIENT_ORIGIN.split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean);
+const configuredClientOrigins = env.CLIENT_ORIGIN.split(',').map((s) => s.trim().replace(/\/$/, '')).filter(Boolean);
+const productionClientOrigin = 'https://eventwebsite-tawny.vercel.app';
+export const clientOrigins = [
+  ...new Set([
+    ...configuredClientOrigins,
+    ...(env.NODE_ENV === 'development' ? [] : [productionClientOrigin]),
+  ]),
+];
 export const publicAppUrl = (env.PUBLIC_APP_URL || clientOrigins[0] || 'http://localhost:5173').replace(/\/$/, '');
 export const demoEnabled = env.ENABLE_DEMO_LOGIN && env.NODE_ENV !== 'production';
 export const mailConfigured = Boolean(env.SMTP_HOST);
