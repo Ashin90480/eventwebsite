@@ -1,4 +1,8 @@
 node_modules
+<<<<<<< HEAD
 dist
 .env
 *.zip
+=======
+.env
+>>>>>>> b04791c69acea01f47ba5943f2c69854d22c0221
