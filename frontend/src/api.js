@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const root = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+const root = (
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? 'https://eventwebsite-1-2tvv.onrender.com' : 'http://localhost:5000')
+).replace(/\/$/, '');
 export const apiBase = `${root}/api`;
 
 const KEY = 'eventqr_token';
