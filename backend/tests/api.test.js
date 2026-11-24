@@ -101,6 +101,17 @@ describe('CORS', () => {
       assert.equal(res.headers['access-control-allow-origin'], origin);
     }
   });
+
+  it('includes the production frontend when NODE_ENV is development', async () => {
+    const previousNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'development';
+    try {
+      const { clientOrigins: developmentOrigins } = await import(`../src/config/env.js?dev-cors-test=${Date.now()}`);
+      assert.ok(developmentOrigins.includes('https://eventwebsite-tawny.vercel.app'));
+    } finally {
+      process.env.NODE_ENV = previousNodeEnv;
+    }
+  });
 });
 
 describe('auth', () => {

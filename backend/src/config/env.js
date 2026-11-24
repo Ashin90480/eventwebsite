@@ -39,7 +39,7 @@ const productionClientOrigin = 'https://eventwebsite-tawny.vercel.app';
 export const clientOrigins = [
   ...new Set([
     ...configuredClientOrigins,
-    ...(env.NODE_ENV === 'development' ? [] : [productionClientOrigin]),
+    productionClientOrigin,
   ]),
 ];
 export const publicAppUrl = (env.PUBLIC_APP_URL || clientOrigins[0] || 'http://localhost:5173').replace(/\/$/, '');
