@@ -7,7 +7,7 @@ import EventForm from '../components/EventForm.jsx';
 import { Badge, Button, Card, ConfirmDialog, CopyButton, ErrorNote, Modal, PageHeader, PageLoader, ProgressBar, Stat, Toggle } from '../components/ui.jsx';
 import { useToast } from '../components/toast.jsx';
 import { useEvent } from '../eventContext.jsx';
-import { EVENT_STATUS, downloadDataUrl, fmtDateTime, fmtRange, timeAgo } from '../format.js';
+import { EVENT_STATUS, downloadDataUrl, fmtDateTime, fmtRange, publicRegistrationUrl, timeAgo } from '../format.js';
 
 const CLOSED = {
   not_published: 'Hidden: the event is a draft',
@@ -55,6 +55,7 @@ export default function EventDetail() {
   }, [eventId, select]);
 
   const ready = event && event.id === eventId;
+  const registrationUrl = publicRegistrationUrl(event);
 
   useEffect(() => {
     if (!ready) return;
@@ -62,9 +63,9 @@ export default function EventDetail() {
   }, [ready, eventId, event?.counts?.registered, event?.attendanceOpen]);
 
   useEffect(() => {
-    if (!ready || !event.publicUrl) return;
-    QRCode.toDataURL(event.publicUrl, { width: 360, margin: 2 }).then(setLinkQr).catch(() => {});
-  }, [ready, event?.publicUrl]);
+    if (!ready || !registrationUrl) return;
+    QRCode.toDataURL(registrationUrl, { width: 360, margin: 2 }).then(setLinkQr).catch(() => {});
+  }, [ready, registrationUrl]);
 
   if (failed && !ready) return <ErrorNote onRetry={refresh}>Could not load this event.</ErrorNote>;
   if (!ready) return <PageLoader label="Loading event…" />;
@@ -179,17 +180,17 @@ export default function EventDetail() {
               <h2 className="flex items-center gap-2 font-semibold text-ink"><Link2 className="size-4 text-brand-600" /> Online registration</h2>
               <Badge tone={st.open ? 'green' : 'slate'} dot>{st.open ? (st.waitlisting ? 'Open · waitlist' : 'Open') : 'Closed'}</Badge>
             </div>
-            {event.publicUrl ? (
+            {registrationUrl ? (
               <div className="grid gap-5 sm:grid-cols-[1fr_9rem]">
                 <div className="min-w-0 space-y-4">
                   <div>
                     <p className="mb-1.5 text-xs font-medium text-slate-500">Share this link with students</p>
                     <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                      <span className="min-w-0 flex-1 truncate text-sm text-ink">{event.publicUrl}</span>
+                      <span className="min-w-0 flex-1 truncate text-sm text-ink">{registrationUrl}</span>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <CopyButton text={event.publicUrl} label="Copy link" />
-                      <a href={event.publicUrl} target="_blank" rel="noopener noreferrer">
+                      <CopyButton text={registrationUrl} label="Copy link" />
+                      <a href={registrationUrl} target="_blank" rel="noopener noreferrer">
                         <Button size="sm" variant="secondary" icon={ExternalLink}>Open page</Button>
                       </a>
                     </div>

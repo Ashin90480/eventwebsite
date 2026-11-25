@@ -6,7 +6,7 @@ import EventForm from '../components/EventForm.jsx';
 import { Badge, Button, Card, CopyButton, EmptyState, ErrorNote, Input, Modal, PageHeader, Pagination, ProgressBar, Select, Skeleton } from '../components/ui.jsx';
 import { useToast } from '../components/toast.jsx';
 import { useEvent } from '../eventContext.jsx';
-import { EVENT_STATUS, fmtDateTime } from '../format.js';
+import { EVENT_STATUS, fmtDateTime, publicRegistrationUrl } from '../format.js';
 
 const FILTERS = [
   ['', 'All'],
@@ -20,6 +20,7 @@ const FILTERS = [
 function EventCard({ e, onOpen }) {
   const c = e.counts || {};
   const r = e.registrationState || {};
+  const registrationUrl = publicRegistrationUrl(e);
   return (
     <Card className="group flex flex-col overflow-hidden transition hover:border-brand-200 hover:shadow-md">
       <button onClick={() => onOpen(e.id)} className="flex flex-1 flex-col text-left">
@@ -57,12 +58,12 @@ function EventCard({ e, onOpen }) {
           </div>
         </div>
       </button>
-      {e.publicUrl && (
+      {registrationUrl && (
         <div className="flex items-center justify-between gap-2 border-t border-slate-100 bg-slate-50/60 px-4 py-2">
           <span className="flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
             <Link2 className="size-3.5 shrink-0" /> <span className="truncate">Registration link</span>
           </span>
-          <CopyButton text={e.publicUrl} label="Copy" variant="ghost" />
+          <CopyButton text={registrationUrl} label="Copy" variant="ghost" />
         </div>
       )}
     </Card>

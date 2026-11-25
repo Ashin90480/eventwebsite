@@ -70,3 +70,16 @@ export function downloadDataUrl(url, name) {
 }
 
 export const pluralize = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+export function publicRegistrationUrl(event) {
+  if (!event?.slug) return event?.publicUrl || '';
+  const fallback = new URL(`/register/${encodeURIComponent(event.slug)}`, window.location.origin).href;
+  if (!event.publicUrl) return fallback;
+  try {
+    const host = new URL(event.publicUrl).hostname;
+    if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host.endsWith('.localhost')) return fallback;
+  } catch {
+    return fallback;
+  }
+  return event.publicUrl;
+}
