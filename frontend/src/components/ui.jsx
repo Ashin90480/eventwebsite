@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, ChevronLeft, ChevronRight, Copy, Inbox, Loader2, X } from 'lucide-react';
 
 export const cx = (...a) => a.filter(Boolean).join(' ');
@@ -226,7 +227,7 @@ export function Modal({ open, onClose, title, children, size = 'md', footer, ful
   if (!open) return null;
   const W = { sm: 'sm:max-w-md', md: 'sm:max-w-xl', lg: 'sm:max-w-3xl', xl: 'sm:max-w-5xl' }[size];
   const mobileHeight = fullScreenOnMobile ? 'h-[100dvh] max-h-[100dvh] rounded-none' : 'max-h-[92vh] rounded-t-2xl';
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4 print:hidden" role="dialog" aria-modal="true" aria-label={title}>
       <div className="absolute inset-0 bg-ink/50 backdrop-blur-[2px]" onClick={onClose} />
       <div className={cx('rise relative flex w-full flex-col bg-white shadow-2xl sm:h-auto sm:max-h-[92vh] sm:rounded-2xl', mobileHeight, W)}>
@@ -239,7 +240,8 @@ export function Modal({ open, onClose, title, children, size = 'md', footer, ful
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
         {footer && <div className="flex flex-wrap justify-end gap-2 rounded-b-2xl border-t border-slate-200 bg-slate-50 px-5 py-3">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
