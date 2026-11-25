@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CalendarDays, Clock, Link2, MapPin, Plus, Search } from 'lucide-react';
 import { api, errMsg } from '../api.js';
@@ -79,6 +79,8 @@ export default function Events() {
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(params.get('new') === '1');
 
@@ -88,14 +90,36 @@ export default function Events() {
   }, [search]);
   useEffect(() => setPage(1), [debounced, status]);
 
-  const load = useCallback(() => {
+  useEffect(() => {
+    let active = true;
     setError('');
+    setLoading(true);
+    const timeout = window.setTimeout(() => {
+      if (!active) return;
+      setError('Events are taking too long to load. Check your connection and try again.');
+      setLoading(false);
+    }, 15000);
+
     api
       .get('/events', { params: { search: debounced || undefined, status: status || undefined, page, limit: 12 } })
-      .then((r) => setData(r.data))
-      .catch((e) => setError(errMsg(e)));
-  }, [debounced, status, page]);
-  useEffect(load, [load]);
+      .then((r) => {
+        if (!active) return;
+        setData(r.data);
+        setError('');
+      })
+      .catch((e) => {
+        if (active) setError(errMsg(e));
+      })
+      .finally(() => {
+        window.clearTimeout(timeout);
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [debounced, status, page, loadAttempt]);
 
   const open = (id) => {
     select(id);
@@ -140,8 +164,8 @@ export default function Events() {
         </Select>
       </div>
 
-      {error && <ErrorNote onRetry={load}>{error}</ErrorNote>}
-      {!data && !error && (
+      {error && <ErrorNote onRetry={() => setLoadAttempt((n) => n + 1)}>{error}</ErrorNote>}
+      {loading && !data && (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2].map((i) => (
             <Skeleton key={i} className="h-72" />
