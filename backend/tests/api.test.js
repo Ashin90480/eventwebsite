@@ -112,6 +112,30 @@ describe('CORS', () => {
       process.env.NODE_ENV = previousNodeEnv;
     }
   });
+
+  it('uses the production frontend for public links instead of localhost', async () => {
+    const previous = {
+      NODE_ENV: process.env.NODE_ENV,
+      CLIENT_ORIGIN: process.env.CLIENT_ORIGIN,
+      PUBLIC_APP_URL: process.env.PUBLIC_APP_URL,
+    };
+    try {
+      process.env.NODE_ENV = 'production';
+      process.env.CLIENT_ORIGIN = 'http://localhost:5173';
+      delete process.env.PUBLIC_APP_URL;
+      const { publicAppUrl: defaultUrl } = await import(`../src/config/env.js?prod-url-default=${Date.now()}`);
+      assert.equal(defaultUrl, 'https://eventwebsite-tawny.vercel.app');
+
+      process.env.PUBLIC_APP_URL = 'http://localhost:5173';
+      const { publicAppUrl: localOverrideUrl } = await import(`../src/config/env.js?prod-url-local-override=${Date.now()}`);
+      assert.equal(localOverrideUrl, 'https://eventwebsite-tawny.vercel.app');
+    } finally {
+      for (const [key, value] of Object.entries(previous)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    }
+  });
 });
 
 describe('auth', () => {

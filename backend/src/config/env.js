@@ -42,6 +42,15 @@ export const clientOrigins = [
     productionClientOrigin,
   ]),
 ];
-export const publicAppUrl = (env.PUBLIC_APP_URL || clientOrigins[0] || 'http://localhost:5173').replace(/\/$/, '');
+const publicAppUrlIsLocal =
+  env.PUBLIC_APP_URL && /^https?:\/\/(?:localhost|127(?:\.\d{1,3}){3})(?::\d+)?(?:\/|$)/i.test(env.PUBLIC_APP_URL);
+const defaultPublicAppUrl = env.NODE_ENV === 'production'
+  ? productionClientOrigin
+  : configuredClientOrigins[0] || 'http://localhost:5173';
+export const publicAppUrl = (
+  env.NODE_ENV === 'production' && publicAppUrlIsLocal
+    ? productionClientOrigin
+    : env.PUBLIC_APP_URL || defaultPublicAppUrl
+).replace(/\/$/, '');
 export const demoEnabled = env.ENABLE_DEMO_LOGIN && env.NODE_ENV !== 'production';
 export const mailConfigured = Boolean(env.SMTP_HOST);
