@@ -87,9 +87,18 @@ function ParticipantModal({ rid, event, onClose, onChanged, changeStatus }) {
   const [removing, setRemoving] = useState(false);
   const [qrVersion, setQrVersion] = useState(0);
   const [busy, setBusy] = useState('');
+  const [loadError, setLoadError] = useState('');
   const base = `/events/${event.id}/registrations/${rid}`;
 
-  const load = useCallback(() => api.get(base).then((r) => setRow(r.data.registration)).catch((e) => toast.error(errMsg(e))), [base, toast]);
+  const load = useCallback(async () => {
+    setLoadError('');
+    try {
+      const { data } = await api.get(base, { timeout: 15000 });
+      setRow(data.registration);
+    } catch (err) {
+      setLoadError(errMsg(err));
+    }
+  }, [base]);
   useEffect(() => { load(); }, [load]);
 
   async function run(name, fn, okMsg) {
@@ -118,8 +127,9 @@ function ParticipantModal({ rid, event, onClose, onChanged, changeStatus }) {
   return (
     <>
       <Modal open onClose={onClose} title={row ? row.name : 'Participant'} size="lg">
+        {row && loadError && <ErrorNote onRetry={load}>{loadError}</ErrorNote>}
         {!row ? (
-          <div className="space-y-3"><Skeleton className="h-6 w-1/2" /><Skeleton className="h-40" /></div>
+          loadError ? <ErrorNote onRetry={load}>{loadError}</ErrorNote> : <div className="space-y-3"><Skeleton className="h-6 w-1/2" /><Skeleton className="h-40" /></div>
         ) : editing ? (
           <ParticipantForm
             initial={row}
@@ -239,6 +249,8 @@ function StudentsInner() {
   const [dir, setDir] = useState('desc');
   const [page, setPage] = useState(1);
   const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [meta, setMeta] = useState({ departments: [], academicYears: [] });
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(new Set());
@@ -253,14 +265,37 @@ function StudentsInner() {
   }, [search]);
   useEffect(() => { setPage(1); setSelected(new Set()); }, [debounced, dept, year, attendance, status, sort, dir]);
 
-  const load = useCallback(() => {
+  const load = useCallback(() => setLoadAttempt((n) => n + 1), []);
+  useEffect(() => {
+    let active = true;
     setError('');
+    setLoading(true);
+    const timeout = window.setTimeout(() => {
+      if (!active) return;
+      setError('Participants are taking too long to load. Check your connection and try again.');
+      setLoading(false);
+    }, 15000);
+
     api
       .get(`/events/${event.id}/registrations`, { params: { search: debounced || undefined, department: dept || undefined, academicYear: year || undefined, attendance: attendance || undefined, status: status || undefined, sort, dir, page, limit: 25 } })
-      .then((r) => setData(r.data))
-      .catch((e) => setError(errMsg(e)));
-  }, [event.id, debounced, dept, year, attendance, status, sort, dir, page]);
-  useEffect(load, [load]);
+      .then((r) => {
+        if (!active) return;
+        setData(r.data);
+        setError('');
+      })
+      .catch((e) => {
+        if (active) setError(errMsg(e));
+      })
+      .finally(() => {
+        window.clearTimeout(timeout);
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [event.id, debounced, dept, year, attendance, status, sort, dir, page, loadAttempt]);
   useEffect(() => {
     api.get(`/events/${event.id}/registrations/meta`).then((r) => setMeta(r.data)).catch(() => {});
   }, [event.id, data?.total]);
@@ -356,7 +391,7 @@ function StudentsInner() {
       )}
 
       {error && <ErrorNote onRetry={load}>{error}</ErrorNote>}
-      {!data && !error && <div className="space-y-2">{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-14" />)}</div>}
+      {!data && loading && <div className="space-y-2">{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-14" />)}</div>}
 
       {data && data.items.length === 0 && (
         <Card>
