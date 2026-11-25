@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { api } from './api.js';
+import { api, errMsg } from './api.js';
 
 const Ctx = createContext(null);
 const KEY = 'eventqr_event';
@@ -13,6 +13,8 @@ export function EventProvider({ children }) {
   const [event, setEvent] = useState(null);
   const [failed, setFailed] = useState(false);
   const [events, setEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState('');
 
   const select = useCallback((id) => {
     try { id ? localStorage.setItem(KEY, id) : localStorage.removeItem(KEY); } catch { /* ignore */ }
@@ -24,7 +26,7 @@ export function EventProvider({ children }) {
   const refresh = useCallback(async () => {
     if (!eventId) { setEvent(null); return null; }
     try {
-      const { data } = await api.get(`/events/${eventId}`);
+      const { data } = await api.get(`/events/${eventId}`, { timeout: 15000 });
       setEvent(data.event);
       setFailed(false);
       return data.event;
@@ -36,18 +38,24 @@ export function EventProvider({ children }) {
   }, [eventId, select]);
 
   const reloadEvents = useCallback(async () => {
+    setEventsLoading(true);
+    setEventsError('');
     try {
-      const { data } = await api.get('/events', { params: { limit: 100, sort: 'startAt' } });
+      const { data } = await api.get('/events', { params: { limit: 100, sort: 'startAt' }, timeout: 15000 });
       setEvents(data.items);
-    } catch { /* the picker simply stays as it was */ }
+    } catch (err) {
+      setEventsError(errMsg(err));
+    } finally {
+      setEventsLoading(false);
+    }
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
   useEffect(() => { reloadEvents(); }, [reloadEvents]);
 
   const value = useMemo(
-    () => ({ eventId, event, events, failed, loading: Boolean(eventId) && !event && !failed, select, refresh, reloadEvents, setEvent }),
-    [eventId, event, events, failed, select, refresh, reloadEvents],
+    () => ({ eventId, event, events, eventsLoading, eventsError, failed, loading: Boolean(eventId) && !event && !failed, select, refresh, reloadEvents, setEvent }),
+    [eventId, event, events, eventsLoading, eventsError, failed, select, refresh, reloadEvents],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
