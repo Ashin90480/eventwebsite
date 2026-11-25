@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CalendarDays, Download, ExternalLink, History, Link2, MapPin, MessageCircle, Pencil, QrCode, ScanLine, Trash2, UserCheck, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Download, ExternalLink, History, Link2, MapPin, MessageCircle, Pencil, Plus, QrCode, ScanLine, Trash2, UserCheck, Users } from 'lucide-react';
 import QRCode from 'qrcode';
 import { api, errMsg } from '../api.js';
 import EventForm from '../components/EventForm.jsx';
@@ -136,6 +136,9 @@ export default function EventDetail() {
         title={event.name}
         actions={
           <>
+            <Link to="/events?new=1">
+              <Button variant="secondary" icon={Plus}>New event</Button>
+            </Link>
             <Button variant="secondary" icon={Pencil} onClick={() => setEditing(true)}>
               Edit
             </Button>
