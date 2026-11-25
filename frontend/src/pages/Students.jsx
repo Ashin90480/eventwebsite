@@ -104,8 +104,11 @@ function ParticipantModal({ rid, event, onClose, onChanged, changeStatus }) {
   async function run(name, fn, okMsg) {
     setBusy(name);
     try {
-      await fn();
-      if (okMsg) toast.success(okMsg);
+      const result = await fn();
+      if (result?.emailStatus === 'sent') toast.success('Ticket e-mail sent');
+      else if (result?.emailStatus === 'skipped') toast.error('Mail server is not configured. Nothing was sent.');
+      else if (result?.emailStatus === 'failed') toast.error('Ticket e-mail failed. Check the server SMTP settings and retry.');
+      else if (okMsg) toast.success(okMsg);
       await load();
       onChanged();
     } catch (err) {
@@ -190,7 +193,7 @@ function ParticipantModal({ rid, event, onClose, onChanged, changeStatus }) {
                 <>
                   <QrImage eventId={event.id} registrationId={rid} version={qrVersion} className="mx-auto size-52" />
                   <div className="mt-3 flex flex-col gap-2">
-                    <Button size="sm" variant="secondary" icon={Mail} loading={busy === 'mail'} onClick={() => run('mail', async () => { const r = await api.post(`${base}/resend`); if (r.data.emailStatus === 'skipped') toast.info('Mail server is not configured. Nothing was sent.'); }, 'Ticket e-mail queued')}>
+                    <Button size="sm" variant="secondary" icon={Mail} loading={busy === 'mail'} onClick={() => run('mail', async () => (await api.post(`${base}/resend`)).data)}>
                       {row.emailStatus === 'sent' ? 'Re-send ticket' : 'E-mail ticket'}
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => download(`${base}/qr`, { download: 1 }, `${row.registrationId}.png`).catch((e) => toast.error(errMsg(e)))}>Download PNG</Button>

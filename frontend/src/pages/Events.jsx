@@ -204,6 +204,7 @@ export default function Events() {
         }}
         title="New event"
         size="lg"
+        fullScreenOnMobile
       >
         <EventForm onSubmit={create} onCancel={() => setCreating(false)} submitLabel="Create event" />
       </Modal>

@@ -114,7 +114,7 @@ export default function EventForm({ event, onSubmit, onCancel, submitLabel = 'Sa
       <section className="space-y-4">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Event details</h3>
         <Field label="Event name" required error={errors.name}>
-          <Input value={f.name} onChange={set('name')} placeholder="e.g. Robotics Workshop" invalid={!!errors.name} autoFocus />
+          <Input value={f.name} onChange={set('name')} placeholder="e.g. Robotics Workshop" invalid={!!errors.name} />
         </Field>
         <Field label="Description" hint="Shown on the public registration page.">
           <Textarea value={f.description} onChange={set('description')} rows={4} maxLength={5000} />
@@ -211,7 +211,7 @@ export default function EventForm({ event, onSubmit, onCancel, submitLabel = 'Sa
       </section>
 
       {formError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</p>}
-      <div className="flex justify-end gap-2">
+      <div className="sticky bottom-0 z-10 flex justify-end gap-2 border-t border-slate-100 bg-white py-3" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
         {onCancel && (
           <Button variant="secondary" onClick={onCancel} disabled={busy}>
             Cancel

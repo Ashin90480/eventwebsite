@@ -211,7 +211,7 @@ export function ErrorNote({ children, onRetry }) {
 }
 
 /* ---------- overlays ---------- */
-export function Modal({ open, onClose, title, children, size = 'md', footer }) {
+export function Modal({ open, onClose, title, children, size = 'md', footer, fullScreenOnMobile = false }) {
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => e.key === 'Escape' && onClose();
@@ -225,17 +225,18 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
   }, [open, onClose]);
   if (!open) return null;
   const W = { sm: 'sm:max-w-md', md: 'sm:max-w-xl', lg: 'sm:max-w-3xl', xl: 'sm:max-w-5xl' }[size];
+  const mobileHeight = fullScreenOnMobile ? 'h-[100dvh] max-h-[100dvh] rounded-none' : 'max-h-[92vh] rounded-t-2xl';
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4 print:hidden" role="dialog" aria-modal="true" aria-label={title}>
       <div className="absolute inset-0 bg-ink/50 backdrop-blur-[2px]" onClick={onClose} />
-      <div className={cx('rise relative flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl', W)}>
+      <div className={cx('rise relative flex w-full flex-col bg-white shadow-2xl sm:h-auto sm:max-h-[92vh] sm:rounded-2xl', mobileHeight, W)}>
         <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <h2 className="text-lg font-semibold text-ink">{title}</h2>
           <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100">
             <X className="size-5" />
           </button>
         </div>
-        <div className="overflow-y-auto px-5 py-4">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
         {footer && <div className="flex flex-wrap justify-end gap-2 rounded-b-2xl border-t border-slate-200 bg-slate-50 px-5 py-3">{footer}</div>}
       </div>
     </div>
