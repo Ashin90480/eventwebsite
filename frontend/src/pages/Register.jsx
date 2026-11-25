@@ -29,10 +29,31 @@ function Shell({ children }) {
 function Success({ done, event }) {
   const o = OUTCOME[done.status] || OUTCOME.registered;
   const [qr, setQr] = useState('');
+  const [qrError, setQrError] = useState('');
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrAttempt, setQrAttempt] = useState(0);
+
   useEffect(() => {
     if (done.status !== 'registered' || !done.ticketCode) return;
-    api.get(`/public/tickets/${done.ticketCode}`).then((r) => setQr(r.data.ticket.qrDataUrl || '')).catch(() => {});
-  }, [done]);
+    let active = true;
+    setQrLoading(true);
+    setQrError('');
+    api
+      .get(`/public/tickets/${done.ticketCode}`)
+      .then((r) => {
+        if (!active) return;
+        const qrDataUrl = r.data.ticket.qrDataUrl || '';
+        setQr(qrDataUrl);
+        if (!qrDataUrl) setQrError('Your registration is confirmed, but the QR code was not returned. Please try again.');
+      })
+      .catch((err) => {
+        if (active) setQrError(errMsg(err));
+      })
+      .finally(() => {
+        if (active) setQrLoading(false);
+      });
+    return () => { active = false; };
+  }, [done.status, done.ticketCode, qrAttempt]);
 
   return (
     <Card className="rise p-6 text-center sm:p-8">
@@ -47,7 +68,26 @@ function Success({ done, event }) {
           <p className="mt-1 text-xs text-slate-500">Show this at the entrance</p>
         </div>
       )}
-      {done.status === 'registered' && done.emailing && <p className="mt-4 text-sm text-slate-500">We are also e-mailing this ticket to you.</p>}
+      {done.status === 'registered' && qrLoading && <p className="mt-4 text-sm text-slate-500">Loading your QR ticket…</p>}
+      {qrError && (
+        <div className="mx-auto mt-4 max-w-md text-sm text-red-700" role="alert">
+          <p>{qrError}</p>
+          <Button variant="secondary" size="sm" className="mt-2" loading={qrLoading} onClick={() => setQrAttempt((n) => n + 1)}>
+            Retry loading QR
+          </Button>
+        </div>
+      )}
+      {['pending', 'waitlisted'].includes(done.status) && (
+        <p className="mx-auto mt-4 max-w-md text-sm text-slate-500">
+          A QR ticket and ticket email are available only after the organiser confirms your registration.
+        </p>
+      )}
+      {done.status === 'registered' && done.emailing && (
+        <p className="mt-4 text-sm text-slate-500">A copy of your ticket is being sent by email. If it doesn't arrive, use the ticket link below or ask the organiser to resend it.</p>
+      )}
+      {done.status === 'registered' && done.ticketCode && !done.emailing && (
+        <p className="mt-4 text-sm text-amber-700">Ticket email delivery is not configured right now. Your ticket is still available from the link below.</p>
+      )}
 
       <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
         {done.ticketCode && (
