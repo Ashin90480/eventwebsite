@@ -70,6 +70,7 @@ export default function Register() {
   const { slug } = useParams();
   const [event, setEvent] = useState(null);
   const [loadError, setLoadError] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [f, setF] = useState({ name: '', email: '', phone: '', department: '', academicYear: '', rollNo: '', website: '' });
   const [answers, setAnswers] = useState({});
   const [errors, setErrors] = useState({});
@@ -82,11 +83,29 @@ export default function Register() {
   const [lostBusy, setLostBusy] = useState(false);
 
   useEffect(() => {
+    let active = true;
+    const timeout = window.setTimeout(() => {
+      if (active) setLoadError('The registration server is taking too long to respond. Please check your connection and try again.');
+    }, 15000);
+
     api
       .get(`/public/events/${slug}`)
-      .then((r) => setEvent(r.data.event))
-      .catch((e) => setLoadError(e.response?.status === 404 ? 'not_found' : errMsg(e)));
-  }, [slug]);
+      .then((r) => {
+        if (!active) return;
+        setEvent(r.data.event);
+        setLoadError('');
+      })
+      .catch((e) => {
+        if (!active) return;
+        setLoadError(e.response?.status === 404 ? 'not_found' : errMsg(e));
+      })
+      .finally(() => window.clearTimeout(timeout));
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [slug, loadAttempt]);
 
   useEffect(() => {
     if (event) document.title = `Register · ${event.name}`;
@@ -163,7 +182,16 @@ export default function Register() {
         </Card>
       </Shell>
     );
-  if (loadError) return <Shell><Card className="p-8 text-center text-sm text-red-700">{loadError}</Card></Shell>;
+  if (loadError) return (
+    <Shell>
+      <Card className="p-8 text-center">
+        <p className="text-sm text-red-700">{loadError}</p>
+        <div className="mt-4">
+          <Button onClick={() => { setEvent(null); setLoadError(''); setLoadAttempt((n) => n + 1); }}>Try again</Button>
+        </div>
+      </Card>
+    </Shell>
+  );
   if (!event) return <PageLoader />;
 
   const reg = event.registration;
